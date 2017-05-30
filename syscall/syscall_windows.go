@@ -821,24 +821,23 @@ var (
 )
 
 type TransmitPacketsElement struct {
-	dwElFlags   uint32
-	cLength     uint32
-	pBuffer     unsafe.Pointer
-	nFileOffset uint64
-	hFile       uintptr
+	dwElFlags uint32
+	cLength   uint32
+	pBuffer   uintptr
+	hFile     uintptr
 }
 
 func transmitPackets(s Handle, bufs [][]byte, overlapped *Overlapped) (err error) {
 	var maxPacketLen = 0
 	tpElements := make([]TransmitPacketsElement, len(bufs))
-	for i, tpElement := range tpElements {
+	for i, _ := range tpElements {
 		buffer := bufs[i]
 		if len(buffer) > maxPacketLen {
 			maxPacketLen = len(buffer)
 		}
-		tpElement.cLength = uint32(len(buffer))
-		tpElement.dwElFlags = uint32(uint32(TP_ELEMENT_MEMORY) | uint32(TP_ELEMENT_EOP))
-		tpElement.pBuffer = unsafe.Pointer(&buffer[0])
+		tpElements[i].cLength = uint32(len(buffer))
+		tpElements[i].dwElFlags = uint32(uint32(TP_ELEMENT_MEMORY) | uint32(TP_ELEMENT_EOP))
+		tpElements[i].pBuffer = uintptr(unsafe.Pointer(&buffer[0]))
 	}
 	r1, _, e1 := Syscall6(transmitPacketsFunc.addr, 6, uintptr(s), uintptr(unsafe.Pointer(&tpElements[0])), uintptr(uint32(len(tpElements))), uintptr(uint32(maxPacketLen)), uintptr(unsafe.Pointer(overlapped)), 0)
 	if r1 == 0 {
